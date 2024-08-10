@@ -1,0 +1,8 @@
+{% block content %}
+  <h2>Редактировать пост</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Сохранить изменения</button>
+  </form>
+{% endblock %}

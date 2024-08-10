@@ -1,0 +1,11 @@
+{% block content %}
+  <h2>Профиль пользователя: {{ user.username }}</h2>
+  <p>Подписки:</p>
+  <ul>
+    {% for subscription in subscriptions %}
+      <li>
+        <a href="{% url 'user_profile' subscription.subscribed_to.username %}">{{ subscription.subscribed_to.username }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
