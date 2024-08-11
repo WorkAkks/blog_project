@@ -1,23 +1,32 @@
 {% block content %}
-    <h2>{{ post.title }}</h2>
-    <p>{{ post.text }}</p>
-    <p>Автор: {{ post.author }}</p>
-    <p>Дата создания: {{ post.created_at }}</p>
+    <div class="container">
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.text }}</p>
+        <p><strong>Автор:</strong> {{ post.author }}</p>
+        <p><strong>Дата создания:</strong> {{ post.created_at }}</p>
 
-   <h3>Комментарии:</h3>
-   {% if comments %}
-       {% for comment in comments %}
-           <p>{{ comment.author }}: {{ comment.text }}</p>
-       {% endfor %}
-   {% else %}
-       <p>Пока нет комментариев.</p>
-   {% endif %}
+        <h3>Комментарии:</h3>
+        {% if comments %}
+            <div class="list-group">
+                {% for comment in comments %}
+                    <div class="list-group-item">
+                        <strong>{{ comment.author }}:</strong> {{ comment.text }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Пока нет комментариев.</p>
+        {% endif %}
 
-    {% if user.is_authenticated %}
-        <form method="post" action="{% url 'add_comment' post.id %}">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Добавить комментарий</button>
-        </form>
-    {% endif %}
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'add_comment' post.id %}" class="mt-3">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Добавить комментарий</button>
+            </form>
+        {% endif %}
+
+        <a href="{% url 'post_list' %}" class="btn btn-secondary mt-3">К списку постов</a>
+        <a href="{% url 'home' %}" class="btn btn-info mt-3">Домой</a>
+    </div>
 {% endblock %}

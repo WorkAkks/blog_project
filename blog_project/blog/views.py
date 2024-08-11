@@ -50,13 +50,14 @@ def user_login(request):
     return render(request, 'blog/login.html', {'form': form})
 
 
-@login_required
+
+@login_required(login_url='login')
 def user_logout(request):
     logout(request)
     return redirect('home')
 
 
-@login_required
+@login_required(login_url='login')
 def user_profile(request, username):
     user = get_object_or_404(User, username=username)
     subscriptions = Subscription.objects.filter(subscriber=user)
@@ -68,7 +69,7 @@ def user_profile(request, username):
 
 
 
-@login_required
+@login_required(login_url='login')
 def create_post(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
@@ -86,13 +87,30 @@ def create_post(request):
     return render(request, 'blog/create_post.html', {'form': form})
 
 
-@login_required
+@login_required(login_url='login')
+@login_required(login_url='login')
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    if post.is_private:
-        return redirect('view_private_post', post_id=post_id)
     comments = post.comments.all()
     form = CommentForm()
+    if post.is_private:
+        if post.author == request.user or request.user in post.author.subscriptions.all():
+            if request.method == 'POST':
+                form = CommentForm(request.POST)
+                if form.is_valid():
+                    comment = form.save(commit=False)
+                    comment.post = post
+                    comment.author = request.user
+                    comment.save()
+                    return redirect('post_detail', post_id=post.id)
+            context = {
+                'post': post,
+                'comments': comments,
+                'form': form
+            }
+            return render(request, 'blog/post_detail.html', context)
+        else:
+            return render(request, 'blog/access_denied.html')
     if request.method == 'POST':
         form = CommentForm(request.POST)
         if form.is_valid():
@@ -109,14 +127,14 @@ def post_detail(request, post_id):
     return render(request, 'blog/post_detail.html', context)
 
 
-@login_required
+@login_required(login_url='login')
 def get_subscription_posts(user):
     subscriptions = Subscription.objects.filter(subscriber=user)
     posts = Post.objects.filter(author__in=[sub.subscribed_to for sub in subscriptions])
     return posts
 
 
-@login_required
+@login_required(login_url='login')
 def subscribe(request, user_id):
   subscribed_to = get_object_or_404(User, pk=user_id)
   if request.user != subscribed_to:
@@ -124,7 +142,7 @@ def subscribe(request, user_id):
   return redirect('user_profile', username=subscribed_to.username)
 
 
-@login_required
+@login_required(login_url='login')
 def view_private_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if post.is_private:
@@ -139,19 +157,18 @@ def view_private_post(request, post_id):
             return render(request, 'blog/post_detail.html', context)
         else:
             return render(request, 'blog/access_denied.html')
-    else:
-        comments = post.comment_set.all()
-        form = CommentForm()
-        context = {
-            'post': post,
-            'comments': comments,
-            'form': form
-        }
-        return render(request, 'blog/post_detail.html', context)
+    comments = post.comment_set.all()
+    form = CommentForm()
+    context = {
+        'post': post,
+        'comments': comments,
+        'form': form
+    }
+    return render(request, 'blog/post_detail.html', context)
 
 
 
-@login_required
+@login_required(login_url='login')
 def edit_post(request, post_id):
   post = get_object_or_404(Post, id=post_id)
   if request.user == post.author:
@@ -167,7 +184,7 @@ def edit_post(request, post_id):
       return render(request, 'blog/access_denied.html')
 
 
-@login_required
+@login_required(login_url='login')
 def delete_post(request, post_id):
   post = get_object_or_404(Post, id=post_id)
   if request.user == post.author:
@@ -182,10 +199,16 @@ def delete_post(request, post_id):
 def post_list(request):
     tags = Tag.objects.all()
     selected_tags = request.GET.getlist('tag')
-    if selected_tags:
-        posts = Post.objects.filter(tags__name__in=selected_tags).distinct()
+    if request.user.is_authenticated:
+        if selected_tags:
+            posts = Post.objects.filter(tags__name__in=selected_tags, author=request.user).distinct()
+        else:
+            posts = Post.objects.filter(author=request.user) | Post.objects.filter(is_private=False)
     else:
-        posts = Post.objects.all()
+        if selected_tags:
+            posts = Post.objects.filter(tags__name__in=selected_tags, is_private=False).distinct()
+        else:
+            posts = Post.objects.filter(is_private=False)
     context = {
         'posts': posts,
         'tags': tags,
@@ -193,7 +216,7 @@ def post_list(request):
     }
     return render(request, 'blog/post_list.html', context)
 
-@login_required
+@login_required(login_url='login')
 def add_comment(request, post_id):
     post = Post.objects.get(pk=post_id)
     if request.method == 'POST':

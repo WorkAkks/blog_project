@@ -1,50 +1,38 @@
-   <!DOCTYPE html>
-   <html lang="en">
-   <head>
-       <meta charset="UTF-8">
-       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-       <title>{% block title %}Мой блог{% endblock %}</title>
-       <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-   </head>
-   <body>
-       <header class="bg-light py-3">
-           <div class="container">
-               <h1 class="text-center">Мой блог</h1>
-               {% if user.is_authenticated %}
-                   <div class="d-flex justify-content-end">
-                       <a href="{% url 'profile' user.username %}" class="btn btn-info mr-2">Профиль</a>
-                       <form action="{% url 'logout' %}" method="post">
-                           {% csrf_token %}
-                           <button type="submit" class="btn btn-danger">Выйти</button>
-                       </form>
-                   </div>
-               {% else %}
-                   <div class="d-flex justify-content-end">
-                       <a href="{% url 'login' %}" class="btn btn-primary mr-2">Войти</a>
-                       <a href="{% url 'register' %}" class="btn btn-success">Зарегистрироваться</a>
-                   </div>
-               {% endif %}
-           </div>
-       </header>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Мой блог{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <header class="bg-light py-3">
+        <div class="container">
+            <h1 class="text-center">Мой блог</h1>
+            {% if user.is_authenticated %}
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'profile' user.username %}" class="btn btn-info mr-2">Профиль</a>
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Выйти</button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'login' %}" class="btn btn-primary mr-2">Войти</a>
+                    <a href="{% url 'register' %}" class="btn btn-success">Зарегистрироваться</a>
+                </div>
+            {% endif %}
+        </div>
+    </header>
+    <a href="{% url 'post_list' %}" class="btn btn-primary">К постам</a>
 
-       <main class="container py-4">
-           {% block content %}
-               <h2>Посты</h2>
-               {% for post in posts %}
-               <div>
-                   <h3><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h3>
-                   <p>{{ post.text|truncatewords:20 }}</p>
-               </div>
-               {% endfor %}
-           {% endblock %}
-       </main>
-
-       <footer class="bg-light py-3 text-center">
-           <p>&copy; 2023 Мой блог</p>
-       </footer>
-       <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-       <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-       <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-   </body>
-   </html>
-   
+    <footer class="bg-light py-3 text-center">
+        <p>&copy; 2023 Мой блог</p>
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
