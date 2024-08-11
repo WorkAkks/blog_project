@@ -2,7 +2,12 @@
   <h2>Регистрация</h2>
   <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form.non_field_errors }}
+    {{ form.username.label_tag }} {{ form.username }} {{ form.username.errors }}
+    {{ form.password1.label_tag }} {{ form.password1 }} {{ form.password1.errors }}
+    {{ form.password2.label_tag }} {{ form.password2 }} {{ form.password2.errors }}
     <button type="submit">Зарегистрироваться</button>
   </form>
+  <p>Уже зарегистрированы? <a href="{% url 'login' %}">Войдите</a>.</p>
+  <a href="{% url 'home' %}" class="home-button">Домой</a>
 {% endblock %}

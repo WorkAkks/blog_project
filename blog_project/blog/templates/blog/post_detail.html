@@ -1,20 +1,23 @@
-
 {% block content %}
     <h2>{{ post.title }}</h2>
     <p>{{ post.text }}</p>
     <p>Автор: {{ post.author }}</p>
     <p>Дата создания: {{ post.created_at }}</p>
 
-    <h3>Комментарии:</h3>
-    {% for comment in post.comment_set.all %}
-        <p>{{ comment.author }}: {{ comment.text }}</p>
-    {% endfor %}
+   <h3>Комментарии:</h3>
+   {% if comments %}
+       {% for comment in comments %}
+           <p>{{ comment.author }}: {{ comment.text }}</p>
+       {% endfor %}
+   {% else %}
+       <p>Пока нет комментариев.</p>
+   {% endif %}
 
     {% if user.is_authenticated %}
         <form method="post" action="{% url 'add_comment' post.id %}">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Добавить комментарий</button>
+            <button type="submit" class="btn btn-primary">Добавить комментарий</button>
         </form>
     {% endif %}
 {% endblock %}

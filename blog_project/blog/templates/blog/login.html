@@ -1,8 +1,28 @@
-{% block content %}
-  <h2>Вход</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Войти</button>
-  </form>
-{% endblock %}
+<div class="form_auth_block">
+  <div class="form_auth_block_content">
+    <p class="form_auth_block_head_text">Вход</p>
+    <form class="form_auth_style" method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          {{ field.label_tag }}
+          {{ field }}
+          {% for error in field.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      {% if form.non_field_errors %}
+        <div class="text-danger">
+          {% for error in form.non_field_errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <button class="form_auth_button" type="submit" name="form_auth_submit">Войти</button>
+    </form>
+    <a href="{% url 'home' %}" class="home-button">Домой</a>
+  </div>
+</div>
