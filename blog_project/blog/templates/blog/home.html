@@ -12,7 +12,7 @@
             <h1 class="text-center">Мой блог</h1>
             {% if user.is_authenticated %}
                 <div class="d-flex justify-content-end">
-                    <a href="{% url 'profile' user.username %}" class="btn btn-info mr-2">Профиль</a>
+                    <a href="{% url 'profile' user.username %}" class="btn btn-info mr-2">Мой Профиль</a>
                     <form action="{% url 'logout' %}" method="post">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">Выйти</button>

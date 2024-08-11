@@ -11,53 +11,65 @@
         <div class="container">
             <h1 class="text-center">Мой блог</h1>
             {% if user.is_authenticated %}
-            <div class="d-flex justify-content-end">
-                <a href="{% url 'profile' user.username %}" class="btn btn-info mr-2">Профиль</a>
-                <form action="{% url 'logout' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Выйти</button>
-                </form>
-            </div>
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'profile' user.username %}" class="btn btn-info mr-2">Профиль</a>
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Выйти</button>
+                    </form>
+                </div>
             {% else %}
-            <div class="d-flex justify-content-end">
-                <a href="{% url 'login' %}" class="btn btn-primary mr-2">Войти</a>
-                <a href="{% url 'register' %}" class="btn btn-success">Зарегистрироваться</a>
-            </div>
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'login' %}" class="btn btn-primary mr-2">Войти</a>
+                    <a href="{% url 'register' %}" class="btn btn-success">Зарегистрироваться</a>
+                </div>
             {% endif %}
         </div>
     </header>
-
     <main class="container py-4">
         {% block content %}
         <div class="mt-4">
             <h2>Все посты</h2>
             {% if user.is_authenticated %}
-            <div class="mb-4">
-                <a href="{% url 'create_post' %}" class="btn btn-success">Создать пост</a>
-            </div>
-            {% endif %}
-            {% if posts %}
-            <div class="list-group">
-                {% for post in posts %}
-                <div class="list-group-item">
-                    <h5 class="mb-1"><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h5>
-                    <p class="mb-1">Автор: {{ post.author }}</p>
-                    <p class="mb-1">Дата создания: {{ post.created_at }}</p>
-                    <p class="mb-1">{{ post.text|truncatewords:20 }}</p>
-                    <div class="d-flex justify-content-between">
-                        {% if user.is_authenticated and post.author == user %}
-                        <a href="{% url 'edit_post' post.id %}" class="btn btn-warning btn-sm">Редактировать</a>
-                        <form method="post" action="{% url 'delete_post' post.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
-                        </form>
-                        {% endif %}
-                    </div>
+                <div class="mb-4">
+                    <a href="{% url 'create_post' %}" class="btn btn-success">Создать пост</a>
                 </div>
-                {% endfor %}
-            </div>
+            {% endif %}
+            <form method="get" class="mb-3">
+                <label for="tag-select">Фильтр по тегам:</label>
+                <select name="tag" id="tag-select">
+                    <option value="">Все теги</option>
+                    {% for tag in tags %}
+                        <option value="{{ tag.id }}" {% if tag.id|stringformat:"i" == selected_tag %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Применить</button>
+            </form>
+            {% if posts %}
+                <div class="list-group">
+                    {% for post in posts %}
+                        <div class="list-group-item">
+                            <h5 class="mb-1"><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h5>
+                            <p class="mb-1">
+                                Автор:
+                                <a href="{% url 'profile' post.author.username %}">{{ post.author.username }}</a>
+                            </p>
+                            <p class="mb-1">Дата создания: {{ post.created_at }}</p>
+                            <p class="mb-1">{{ post.text|truncatewords:20 }}</p>
+                            <div class="d-flex justify-content-between">
+                                {% if user.is_authenticated and post.author == user %}
+                                    <a href="{% url 'edit_post' post.id %}" class="btn btn-warning btn-sm">Редактировать</a>
+                                    <form method="post" action="{% url 'delete_post' post.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
             {% else %}
-            <p>Постов пока нет.</p>
+                <p>Постов пока нет.</p>
             {% endif %}
         </div>
         {% endblock %}

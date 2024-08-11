@@ -15,10 +15,10 @@ class Post(models.Model):
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
     def __str__(self):
         return self.name
-
 
 class Subscription(models.Model):
     subscriber = models.ForeignKey(User, related_name='subscriptions', on_delete=models.CASCADE)

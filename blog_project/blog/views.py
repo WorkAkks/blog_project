@@ -5,9 +5,7 @@ from .forms import PostForm, CommentForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-
+from django.contrib import messages
 
 
 def home(request):
@@ -17,6 +15,7 @@ def home(request):
         'user': request.user
     }
     return render(request, 'blog/home.html', context)
+
 
 def register(request):
     if request.method == 'POST':
@@ -28,7 +27,6 @@ def register(request):
     else:
         form = UserCreationForm()
     return render(request, 'blog/register.html', {'form': form})
-
 
 
 def user_login(request):
@@ -60,13 +58,12 @@ def user_logout(request):
 @login_required(login_url='login')
 def user_profile(request, username):
     user = get_object_or_404(User, username=username)
-    subscriptions = Subscription.objects.filter(subscriber=user)
+    subscriptions = user.subscribers.all()
     context = {
         'user': user,
         'subscriptions': subscriptions,
     }
     return render(request, 'blog/profile.html', context)
-
 
 
 @login_required(login_url='login')
@@ -77,11 +74,11 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            selected_tags = request.POST.getlist('tags')
-            for tag_name in selected_tags:
-                tag, created = Tag.objects.get_or_create(name=tag_name)
-                post.tags.add(tag)
-            return HttpResponseRedirect(reverse('post_list'))
+            selected_tags = form.cleaned_data.get('tags')
+            if selected_tags:
+                print(selected_tags)
+                post.tags.set(selected_tags)
+            return redirect('post_list')
     else:
         form = PostForm()
     return render(request, 'blog/create_post.html', {'form': form})
@@ -127,19 +124,36 @@ def post_detail(request, post_id):
     return render(request, 'blog/post_detail.html', context)
 
 
-@login_required(login_url='login')
 def get_subscription_posts(user):
     subscriptions = Subscription.objects.filter(subscriber=user)
-    posts = Post.objects.filter(author__in=[sub.subscribed_to for sub in subscriptions])
+    if not subscriptions.exists():
+        return Post.objects.none()
+    posts = Post.objects.filter(author__in=[sub.subscribed_to for sub in subscriptions]).distinct()
     return posts
 
 
 @login_required(login_url='login')
+def subscription_list(request):
+    posts = get_subscription_posts(request.user)
+    return render(request, 'blog/subscription_list.html', {'posts': posts})
+
+@login_required(login_url='login')
+def unsubscribe(request, user_id):
+    subscribed_to = get_object_or_404(User, pk=user_id)
+    if request.user != subscribed_to:
+        Subscription.objects.filter(subscriber=request.user, subscribed_to=subscribed_to).delete()
+    return redirect('blog/profile.html', username=subscribed_to.username)
+
+
+@login_required(login_url='login')
 def subscribe(request, user_id):
-  subscribed_to = get_object_or_404(User, pk=user_id)
-  if request.user != subscribed_to:
-      Subscription.objects.create(subscriber=request.user, subscribed_to=subscribed_to)
-  return redirect('user_profile', username=subscribed_to.username)
+    user_to_subscribe = get_object_or_404(User, id=user_id)
+    if request.user.subscriptions.filter(subscribed_to=user_to_subscribe).exists():
+        messages.warning(request, 'Вы уже подписаны на этого пользователя.')
+    else:
+        Subscription.objects.create(subscriber=request.user, subscribed_to=user_to_subscribe)
+        messages.success(request, f'Вы подписались на {user_to_subscribe.username}.')
+    return redirect('blog/profile.html', user_id=user_id)
 
 
 @login_required(login_url='login')
@@ -147,7 +161,7 @@ def view_private_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if post.is_private:
         if post.author == request.user or request.user in post.author.subscriptions.all():
-            comments = post.comment_set.all()
+            comments = post.comments.all()
             form = CommentForm()
             context = {
                 'post': post,
@@ -196,23 +210,33 @@ def delete_post(request, post_id):
       return render(request, 'blog/access_denied.html')
 
 
+@login_required(login_url='login')
 def post_list(request):
     tags = Tag.objects.all()
-    selected_tags = request.GET.getlist('tag')
+    selected_tag = request.GET.get('tag')
+    posts = Post.objects.none()
     if request.user.is_authenticated:
-        if selected_tags:
-            posts = Post.objects.filter(tags__name__in=selected_tags, author=request.user).distinct()
+        subscription_posts = get_subscription_posts(request.user)
+        print(f"Subscription posts count: {subscription_posts.count()}")
+        if selected_tag:
+            print(f"Filtering posts with tag id: {selected_tag}")
+            posts = subscription_posts.filter(tags__id=int(selected_tag)).distinct()
+            print(f"Filtered posts count: {posts.count()}")
         else:
-            posts = Post.objects.filter(author=request.user) | Post.objects.filter(is_private=False)
+            if subscription_posts.exists():
+                subscription_posts = subscription_posts.distinct()
+                posts = subscription_posts | Post.objects.filter(author=request.user).distinct() | Post.objects.filter(is_private=False).distinct()
+            else:
+                posts = Post.objects.filter(is_private=False).distinct()
     else:
-        if selected_tags:
-            posts = Post.objects.filter(tags__name__in=selected_tags, is_private=False).distinct()
+        if selected_tag:
+            posts = Post.objects.filter(tags__id=int(selected_tag), is_private=False).distinct()
         else:
-            posts = Post.objects.filter(is_private=False)
+            posts = Post.objects.filter(is_private=False).distinct()
     context = {
         'posts': posts,
         'tags': tags,
-        'selected_tags': selected_tags
+        'selected_tag': selected_tag,
     }
     return render(request, 'blog/post_list.html', context)
 
